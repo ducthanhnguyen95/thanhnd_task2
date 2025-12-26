@@ -184,22 +184,24 @@ sequenceDiagram
     participant Redis
     participant MySQL
     
-    box rgb(255, 230, 230) Cách cũ (Chậm)
-    User->>+App: 1. Bấm Mua
-    App->>+MySQL: 2. Begin Transaction (Lock Row)
-    MySQL-->>MySQL: ...Chờ I/O đĩa & Chờ khóa...
-    MySQL-->>-App: 3. Commit xong
-    App-->>-User: 4. Phản hồi "Thành công" (2000ms)
+    rect rgb(255, 230, 230)
+        note right of User: Cách cũ (Chậm)
+        User->>+App: 1. Bấm Mua
+        App->>+MySQL: 2. Begin Transaction (Lock Row)
+        MySQL-->>MySQL: ...Chờ I/O đĩa & Chờ khóa...
+        MySQL-->>-App: 3. Commit xong
+        App-->>-User: 4. Phản hồi "Thành công" (2000ms)
     end
     
-    box rgb(230, 255, 230) Cách mới (Siêu nhanh)
-    User->>+App: 1. Bấm Mua
-    App->>+Redis: 2. Trừ kho (RAM)
-    Redis-->>-App: 3. Xong (<1ms)
-    App-->>-User: 4. Phản hồi "Thành công" (10ms)
-    par Ghi xuống DB sau
-        App-)MySQL: 5. Worker lưu vào DB từ từ
-    end
+    rect rgb(230, 255, 230)
+        note right of User: Cách mới (Siêu nhanh)
+        User->>+App: 1. Bấm Mua
+        App->>+Redis: 2. Trừ kho (RAM)
+        Redis-->>-App: 3. Xong (<1ms)
+        App-->>-User: 4. Phản hồi "Thành công" (10ms)
+        par Ghi xuống DB sau
+            App-)MySQL: 5. Worker lưu vào DB từ từ
+        end
     end
 ```
 ---
