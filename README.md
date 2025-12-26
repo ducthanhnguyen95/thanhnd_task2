@@ -143,28 +143,29 @@ end
 **Diagram mô tả luồng xử lý**
 ```mermaid
 sequenceDiagram
-    participant UserA as User A
-    participant UserB as User B
-    participant Redis as Redis (Single Thread)
+    participant User
+    participant App
+    participant Redis
+    participant MySQL
     
-    Note over Redis: Tồn kho hiện tại = 1
-    
-    UserA->>Redis: Gửi lệnh MUA (Lua Script)
-    UserB->>Redis: Gửi lệnh MUA (Lua Script)
-    
-    Note over Redis: Redis nhận cả 2,<br/>nhưng CHỈ xử lý từng cái một
-    
-    rect rgb(200, 255, 200)
-        Note right of Redis: Xử lý User A trước
-        Redis->>Redis: Check 1 > 0? OK
-        Redis->>Redis: DECR 1 -> 0
-        Redis-->>UserA: Trả về: THÀNH CÔNG
+    rect rgb(255, 230, 230)
+        note right of User: Cách cũ (Chậm)
+        User->>+App: 1. Bấm Mua
+        App->>+MySQL: 2. Begin Transaction (Lock Row)
+        MySQL-->>MySQL: ...Chờ I/O đĩa & Chờ khóa...
+        MySQL-->>-App: 3. Commit xong
+        App-->>-User: 4. Phản hồi "Thành công" (2000ms)
     end
     
-    rect rgb(255, 200, 200)
-        Note right of Redis: Giờ mới xử lý User B
-        Redis->>Redis: Check 0 > 0? FALSE
-        Redis-->>UserB: Trả về: THẤT BẠI (Hết hàng)
+    rect rgb(230, 255, 230)
+        note right of User: Cách mới (Siêu nhanh)
+        User->>+App: 1. Bấm Mua
+        App->>+Redis: 2. Trừ kho (RAM)
+        Redis-->>-App: 3. Xong (<1ms)
+        App-->>-User: 4. Phản hồi "Thành công" (10ms)
+        par Ghi xuống DB sau
+            App-)MySQL: 5. Worker lưu vào DB từ từ
+        end
     end
 ```
 
