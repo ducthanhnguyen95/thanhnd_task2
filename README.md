@@ -140,7 +140,7 @@ end
 * Nếu Redis trả về 1 (Thành công): App server đẩy sự kiện "Đơn hàng tạo thành công" vào **Redis Stream** (Queue).
 * Một Worker thread (Consumer) sẽ lấy sự kiện từ Queue và ghi xuống **MySQL Master** với tốc độ ổn định, tuân thủ giới hạn .
 
-**Biểu đồ mô tả luồng xử lý**
+**Diagram mô tả luồng xử lý**
 ```mermaid
 sequenceDiagram
     participant UserA as User A
@@ -175,6 +175,32 @@ sequenceDiagram
 * Vì việc kiểm tra và trừ kho diễn ra trên RAM (Redis), thao tác chỉ tốn vài micro-giây.
 * Người dùng nhận được thông báo "Mua thành công" ngay sau khi Redis xử lý xong, trước khi dữ liệu được ghi xuống MySQL. Điều này đảm bảo trải nghiệm nhanh nhất có thể.
 
+**Diagram minh họa, so sánh giữa cách xử lý truyền thống (App -> MySQL) và cách xử lý mới (App -> Redis)**
+```mermaid
+sequenceDiagram
+    participant User
+    participant App
+    participant Redis
+    participant MySQL
+    
+    box rgb(255, 230, 230) Cách cũ (Chậm)
+    User->>+App: 1. Bấm Mua
+    App->>+MySQL: 2. Begin Transaction (Lock Row)
+    MySQL-->>MySQL: ...Chờ I/O đĩa & Chờ khóa...
+    MySQL-->>-App: 3. Commit xong
+    App-->>-User: 4. Phản hồi "Thành công" (2000ms)
+    end
+    
+    box rgb(230, 255, 230) Cách mới (Siêu nhanh)
+    User->>+App: 1. Bấm Mua
+    App->>+Redis: 2. Trừ kho (RAM)
+    Redis-->>-App: 3. Xong (<1ms)
+    App-->>-User: 4. Phản hồi "Thành công" (10ms)
+    par Ghi xuống DB sau
+        App-)MySQL: 5. Worker lưu vào DB từ từ
+    end
+    end
+```
 ---
 
 ## 4. Phân tích dựa trên N, C, S
