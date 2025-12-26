@@ -7,37 +7,71 @@ Hệ thống tuân theo kiến trúc 3 tầng (**3-tier architecture**) được
 * **3 Servers (Data Layer):** Chạy Database quan hệ (1 Master, 2 Slaves).
 
 ```mermaid
-graph TD
-    %% Node Definitions
-    User(("Người dùng N=6000")) -->|HTTP Requests| LB["Load Balancer (Nginx)"]
+flowchart LR
+    %% --- ĐỊNH NGHĨA NODE ---
     
-    subgraph "Application Layer (3 Servers)"
-        LB --> AS1["App Server 1 + Redis Node"]
-        LB --> AS2["App Server 2 + Redis Node"]
-        LB --> AS3["App Server 3 + Redis Node"]
+    %% Node Người dùng (Hình tròn)
+    User(("Người dùng<br/>N=6000")) 
+    
+    %% Node Load Balancer (Hình thoi/lục giác)
+    LB{{"Load Balancer<br/>(Nginx)"}}
+    
+    %% --- KHỐI APPLICATION LAYER ---
+    subgraph AppLayer ["Application Layer (3 Servers)"]
+        direction TB
+        AS1["App Server 1<br/>+ Redis Node"]
+        AS2["App Server 2<br/>+ Redis Node"]
+        AS3["App Server 3<br/>+ Redis Node"]
     end
     
-    subgraph "Data Layer (3 Servers)"
-        %% Write Path
-        AS1 & AS2 & AS3 -.->|"Ghi bất đồng bộ / Queue"| DBM["DB Master (Ghi)"]
-        
-        %% Read Path
-        AS1 & AS2 & AS3 <-->|"Đọc Replicas"| DBS1["DB Slave 1 (Đọc)"]
-        AS1 & AS2 & AS3 <-->|"Đọc Replicas"| DBS2["DB Slave 2 (Đọc)"]
+    %% --- KHỐI DATA LAYER ---
+    subgraph DataLayer ["Data Layer (3 Servers)"]
+        direction TB
+        %% Node Database (Hình trụ)
+        DBM[("DB Master<br/>(Ghi)")]
+        DBS1[("DB Slave 1<br/>(Đọc)")]
+        DBS2[("DB Slave 2<br/>(Đọc)")]
     end
+
+    %% --- KẾT NỐI ---
     
-    %% Replication
-    DBM -->|Replication| DBS1
-    DBM -->|Replication| DBS2
+    %% Luồng chính (Mũi tên đậm dài)
+    User ===>|HTTP Requests| LB
     
-    %% Styling
-    style LB fill:#f9f,stroke:#333
-    style AS1 fill:#bbf,stroke:#333
-    style AS2 fill:#bbf,stroke:#333
-    style AS3 fill:#bbf,stroke:#333
-    style DBM fill:#f96,stroke:#333
-    style DBS1 fill:#ff9,stroke:#333
-    style DBS2 fill:#ff9,stroke:#333
+    LB --> AS1
+    LB --> AS2
+    LB --> AS3
+    
+    %% Kết nối App -> DB Master (Ghi qua Queue)
+    AS1 -.->|"Ghi (Queue)"| DBM
+    AS2 -.-> DBM
+    AS3 -.-> DBM
+    
+    %% Kết nối App -> DB Slave (Đọc)
+    AS1 <--> DBS1
+    AS2 <--> DBS1
+    AS3 <--> DBS1
+    
+    AS1 <--> DBS2
+    AS2 <--> DBS2
+    AS3 <--> DBS2
+    
+    %% Replication (Đồng bộ dữ liệu)
+    DBM ==>|Replication| DBS1
+    DBM ==>|Replication| DBS2
+
+    %% --- TÔ MÀU ---
+    classDef userStyle fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef lbStyle fill:#e1f5fe,stroke:#0277bd,stroke-width:2px;
+    classDef appStyle fill:#bbf,stroke:#333,stroke-width:1px;
+    classDef masterStyle fill:#f96,stroke:#333,stroke-width:2px;
+    classDef slaveStyle fill:#ff9,stroke:#333,stroke-width:2px;
+
+    class User userStyle;
+    class LB lbStyle;
+    class AS1,AS2,AS3 appStyle;
+    class DBM masterStyle;
+    class DBS1,DBS2 slaveStyle;
 
 ```
 ---
