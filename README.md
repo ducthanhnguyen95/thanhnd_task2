@@ -234,9 +234,3 @@ sequenceDiagram
 * **Khả năng mở rộng (Scalability):**
 * Có thể thêm App Server theo chiều ngang (Scale out) dễ dàng.
 * Có thể áp dụng **Database Sharding** (chia nhỏ dữ liệu theo ID sản phẩm) nếu Master DB quá tải trong tương lai.
-
-
-
-```
-
-```
