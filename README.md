@@ -183,7 +183,7 @@ sequenceDiagram
     participant Redis
     participant MySQL
     
-    rect rgb(255, 230, 230)
+    rect rgb(255, 200, 200)
         note right of User: Cách cũ (Chậm)
         User->>+App: 1. Bấm Mua
         App->>+MySQL: 2. Begin Transaction (Lock Row)
@@ -192,7 +192,7 @@ sequenceDiagram
         App-->>-User: 4. Phản hồi "Thành công" (2000ms)
     end
     
-    rect rgb(230, 255, 230)
+    rect rgb(200, 255, 200)
         note right of User: Cách mới (Siêu nhanh)
         User->>+App: 1. Bấm Mua
         App->>+Redis: 2. Trừ kho (RAM)
