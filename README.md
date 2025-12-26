@@ -72,7 +72,6 @@ flowchart LR
     class AS1,AS2,AS3 appStyle;
     class DBM masterStyle;
     class DBS1,DBS2 slaveStyle;
-
 ```
 ---
 
@@ -140,6 +139,34 @@ end
 * **Lưu trữ:**
 * Nếu Redis trả về 1 (Thành công): App server đẩy sự kiện "Đơn hàng tạo thành công" vào **Redis Stream** (Queue).
 * Một Worker thread (Consumer) sẽ lấy sự kiện từ Queue và ghi xuống **MySQL Master** với tốc độ ổn định, tuân thủ giới hạn .
+
+**Biểu đồ mô tả luồng xử lý**
+```mermaid
+sequenceDiagram
+    participant UserA as User A
+    participant UserB as User B
+    participant Redis as Redis (Single Thread)
+    
+    Note over Redis: Tồn kho hiện tại = 1
+    
+    UserA->>Redis: Gửi lệnh MUA (Lua Script)
+    UserB->>Redis: Gửi lệnh MUA (Lua Script)
+    
+    Note over Redis: Redis nhận cả 2,<br/>nhưng CHỈ xử lý từng cái một
+    
+    rect rgb(200, 255, 200)
+        Note right of Redis: Xử lý User A trước
+        Redis->>Redis: Check 1 > 0? OK
+        Redis->>Redis: DECR 1 -> 0
+        Redis-->>UserA: Trả về: THÀNH CÔNG
+    end
+    
+    rect rgb(255, 200, 200)
+        Note right of Redis: Giờ mới xử lý User B
+        Redis->>Redis: Check 0 > 0? FALSE
+        Redis-->>UserB: Trả về: THẤT BẠI (Hết hàng)
+    end
+```
 
 
 
