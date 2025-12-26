@@ -165,7 +165,8 @@ sequenceDiagram
         Note right of Redis: Giờ mới xử lý User B
         Redis->>Redis: Check 0 > 0? FALSE
         Redis-->>UserB: Trả về: THẤT BẠI (Hết hàng)
-    end```
+    end
+```
 
 
 
